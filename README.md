@@ -1,14 +1,14 @@
 
 
 
-1. What this program does
+# 1. What this program does
 
 This program removes directories and files according to the retention period defined in the config.json file.
 If the creation time (derived from the directory path) is older than the specified retention period, that directory and all its subordinate files are deleted.
 
 
 
-2. Process Analysis
+# 2. Process Analysis
 
 The load_json_config() function first reads the user’s configuration file — which defines the company ID and retention period — using the cJSON library.
 
@@ -20,7 +20,7 @@ If the directory’s age exceeds the retention period, that directory — along 
 
 
 
-3. Why ftw() was chosen
+# 3. Why ftw() was chosen
 
 This approach was chosen because the ftw() function perfectly fits the assignment’s requirement:
 to traverse and selectively remove directories and files based on a retention policy, without manually implementing recursive directory traversal logic.
@@ -31,18 +31,21 @@ It also provides useful metadata such as file type (FTW_F, FTW_D, FTW_DP, etc.) 
 enabling fine-grained control over deletion rules, retention logic, and dry-run behaviors.
 
 
-4. How to use
+# 4. How to use
 
-(1) install requirements
+## (1) install requirements
 	In case of Ubuntu system, to install jSON package,
+	
 	  $ sudo apt install libcjson-dev
 
 
-(2) compile and build
-	Either use Makefile 
+## (2) compile and build
+###	Either use Makefile 
+	
 	  $ make
 
-	or gcc compilation command
+###	or gcc compilation command
+	
 	  $ gcc -O2 -Wall -o rm_retention rm_retention.c -I/usr/include/cjson -lcjson
 
 	
