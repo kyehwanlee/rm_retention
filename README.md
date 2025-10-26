@@ -31,7 +31,14 @@ It also provides useful metadata such as file type (FTW_F, FTW_D, FTW_DP, etc.) 
 enabling fine-grained control over deletion rules, retention logic, and dry-run behaviors.
 
 
-# 4. How to use
+
+# 4. Future Improvement
+
+ - 
+
+
+
+# 5. How to use
 
 ## (1) install requirements
 	In case of Ubuntu system, to install jSON package,
@@ -48,7 +55,19 @@ enabling fine-grained control over deletion rules, retention logic, and dry-run 
 	
 	  $ gcc -O2 -Wall -o rm_retention rm_retention.c -I/usr/include/cjson -lcjson
 
-	
+
+## (3) usage	
+
+
+	Usage: ./rm_retention -c config.json -r ROOT [--dry-run] [--fd N]
+
+	  -c/--config  config.json path (required)
+	  -r/--root    root directory to scan (required)
+	  --dry-run    perform dry-run (default: false)
+	  --fd N       nftw max open fds (default 32)
+
+	(for example)
+		./rm_retention -c config.json -r /data --dry-run --fd 32
 
 
 
