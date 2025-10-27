@@ -44,7 +44,7 @@ enabling fine-grained control over deletion rules, retention logic, and dry-run 
 Each heap entry stores the creation time and the retention time configured for that company/device.
 The sum of these two values forms the expire_epoch, which becomes the heap’s key so that the smallest (earliest expiration) entry always remains at the top.
 
-  - Thread 2: Periodically (e.g., every 10 or 30 minutes) checks the top of the heap and compares its timestamp with the current system time (time(NULL)).
+  - Thread 2: The check interval (e.g., every 10–30 minutes) can be made configurable through the JSON file to adapt to different workloads. This checks the top of the heap and compares its timestamp with the current system time (time(NULL)).
 If the current time exceeds the expiration, the corresponding directory and files are deleted.
 
 - **Threading vs Multi-Process:**  
@@ -71,9 +71,13 @@ This approach ensures that newly created entries are not missed while reducing t
 To ensure the proposed multi-threaded and heap-based architecture operates safely and efficiently, the following design considerations should be addressed during implementation:
 
 - **Thread Synchronization:**  
-Since multiple threads (heap builder, watcher, and cleaner) may concurrently access the shared heap structure, all heap operations (push/pop/peek) should be protected using pthread_mutex_t locks.
-A lightweight mutex ensures data consistency while maintaining concurrency between threads.
-
+Since multiple threads (heap builder, watcher, and cleaner) may concurrently access the shared heap structure, all heap operations (push/pop/peek) should be protected using pthread_mutex_t locks. 
+A lightweight mutex ensures data consistency while maintaining concurrency between threads. (example below)  
+  ```bash
+  pthread_mutex_lock(&heap_mutex);
+  heap_push(&heap, entry);
+  pthread_mutex_unlock(&heap_mutex);
+  ```
 
 - **Initial Scan Load Control:**  
 When performing the first nftw() traversal across a very large directory tree, CPU and disk I/O usage can spike.
