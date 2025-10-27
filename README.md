@@ -99,14 +99,21 @@ This installs the header (/usr/include/cjson/) and the shared library (/usr/lib6
 
 ### Ubuntu / Debian	
 ```bash
-	  sudo apt update
-	  sudo apt install libcjson-dev
+sudo apt update
+sudo apt install libcjson-dev -y
 ```
 	
-### Red Hat / CentOS / Rocky Linux
+### RHEL / CentOS / Rocky / AlmaLinux
 (Older systems may use yum instead of dnf)
+Make sure EPEL repository is enabled before installing dependencies:
+
 ```bash
-	  sudo dnf install cjson-devel
+# Enable EPEL repository
+sudo dnf install epel-release -y
+sudo dnf update -y
+
+# Then install cJSON development package
+sudo dnf install cjson-devel -y
 ```
   
 
