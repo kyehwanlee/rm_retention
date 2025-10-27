@@ -8,6 +8,7 @@ If the creation time (derived from the directory path) is older than the specifi
 
 
 
+
 # 2. Process Analysis
 
 The load_json_config() function first reads the user’s configuration file — which defines the company ID and retention period — using the cJSON library.
@@ -17,6 +18,7 @@ It automatically calls a user-defined callback function for each entry in the tr
 
 In the callback function cb_delete_entry(), the program compares the date extracted from the directory name with the retention period specified in the configuration.
 If the directory’s age exceeds the retention period, that directory — along with all its subdirectories and contained files — is removed.
+
 
 
 
@@ -32,18 +34,77 @@ enabling fine-grained control over deletion rules, retention logic, and dry-run 
 
 
 
+
 # 4. Future Improvement
 
- - 
+- The current program runs as a single process that scans directories using nftw() to obtain time values and compares them against user-defined retention periods from config.json to decide whether to delete a folder.
+
+- **To improve scalability and responsiveness, the design can be extended to use two cooperative execution threads:**  
+  - Thread 1: Recursively scans the existing directory structure with nftw() and builds a min-heap (complete binary tree) in memory.
+Each heap entry stores the creation time and the retention time configured for that company/device.
+The sum of these two values forms the expire_epoch, which becomes the heap’s key so that the smallest (earliest expiration) entry always remains at the top.
+
+  - Thread 2: Periodically (e.g., every 10 or 30 minutes) checks the top of the heap and compares its timestamp with the current system time (time(NULL)).
+If the current time exceeds the expiration, the corresponding directory and files are deleted.
+
+- **Threading vs Multi-Process:**  
+Instead of using two separate processes with IPC, using two threads (pthread) is simpler and more efficient because they share the same memory address space and can directly access the heap structure.
+
+- **Time Complexity Advantages:**
+  - The key advantage lies in finding the minimum value:
+in a stack, queue, or list this search takes O(n),
+but in a min-heap, retrieving the minimum (top element) takes O(1).
+  - Even though push/pop on a heap require O(log n) time, this is much more efficient than a full O(n) scan when handling large-scale datasets (e.g., 100,000+ entries).
+
+- **Restart durability (optional enhancement):**  
+Only a single nftw() scan at startup is necessary to rebuild the heap.
+For large or frequently changing directory sets, the design can later integrate inotify to detect new directories in real time and immediately update the heap.
+This approach ensures that newly created entries are not missed while reducing the overhead of repeated full scans.
+
+- Once stabilized, this two-thread architecture can run continuously as a background daemon or systemd service, providing efficient mid-scale to large-scale retention management without the need for an external database.
 
 
 
-# 5. How to use
 
-## (1) install requirements
-	In case of Ubuntu system, to install jSON package,
+# 5. Implementation Considerations
+
+To ensure the proposed multi-threaded and heap-based architecture operates safely and efficiently, the following design considerations should be addressed during implementation:
+
+- **Thread Synchronization:**  
+Since multiple threads (heap builder, watcher, and cleaner) may concurrently access the shared heap structure, all heap operations (push/pop/peek) should be protected using pthread_mutex_t locks.
+A lightweight mutex ensures data consistency while maintaining concurrency between threads.
+
+
+- **Initial Scan Load Control:**  
+When performing the first nftw() traversal across a very large directory tree, CPU and disk I/O usage can spike.
+To mitigate this, the scanning thread can implement a rate limiter or batch insertion into the heap (e.g., pushing 1000 entries per cycle with short sleeps).
+
+
+- **Cross-platform and Restart Durability:**  
+The design is fully portable to all Linux distributions supporting POSIX APIs.
+On startup, only a single nftw() scan is required to rebuild the heap.
+Optionally, inotify can be used to dynamically add or remove heap entries whenever directories are created or deleted, ensuring real-time synchronization without full rescans.
+
+
+
+
+# 6. Installations & Usage
+
+## (1) install requirements to install jSON package
+This installs the header (/usr/include/cjson/) and the shared library (/usr/lib64/libcjson.so).
+
+### Ubuntu / Debian	
+```bash
+	  sudo apt update
+	  sudo apt install libcjson-dev
+```
 	
-	  $ sudo apt install libcjson-dev
+### Red Hat / CentOS / Rocky Linux
+(Older systems may use yum instead of dnf)
+```bash
+	  sudo dnf install cjson-devel
+```
+  
 
 
 ## (2) compile and build
@@ -54,6 +115,7 @@ enabling fine-grained control over deletion rules, retention logic, and dry-run 
 ###	or gcc compilation command
 	
 	  $ gcc -O2 -Wall -o rm_retention rm_retention.c -I/usr/include/cjson -lcjson
+
 
 
 ## (3) usage	
