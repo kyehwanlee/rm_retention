@@ -119,11 +119,13 @@ sudo dnf install cjson-devel -y
 
 
 ## (2) compile and build
-###	Either use Makefile 
+You can build the program in two ways:
+
+### Option 1: Using Makefile (requires `make` and `gcc`)
 	
 	  $ make
 
-###	or gcc compilation command
+###	Option 2: Manual Compilation (requires only gcc) 
 	
 	  $ gcc -O2 -Wall -o rm_retention rm_retention.c -I/usr/include/cjson -lcjson
 
@@ -140,10 +142,13 @@ sudo dnf install cjson-devel -y
 	  --fd N       nftw max open fds (default 32)
 
 	(for example)
-		./rm_retention -c config.json -r /data --dry-run --fd 32
+		./rm_retention -c config.json -r /data --dry-run 
 
 
 
+# 7. Rough Estimation time
+- Program design including Future consideration : apprx. 2 hours
+- Implementation coding : apprx. 4-5 hours.
 
 
 
